@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Calculator</title>
+    <style>
+        /* Common styles */
+        input[type="number"],
+        select {
+            width: calc(100% - 30px); /* Set the width of all input boxes and select boxes to fill the container */
+            padding: 5px; /* Add some padding */
+            box-sizing: border-box; /* Include padding and border in the element's total width and height */
+            margin-bottom: 10px; /* Add some space below each input */
+            position: relative; /* Set position to relative for the "?" icon */
+        }
+
+        .container {
+            margin: 90px auto; /* This centers the container horizontally */
+            width: 320px; /* You can adjust this width as needed */
+            border: 1px solid #ccc;
+            padding: 50px;
+            border-radius: 5px;
+            position: relative;
+        }
+
+        form {
+            width: 100%; /* Match the width of the container */
+        }
+
+        /* Submit Button Styles */
+        .container form input[type="submit"] {
+            background-color: #3498db;
+            color: #fff;
+            padding: 10px; /* Adjust padding to match label padding */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: calc(100% - 2ch); /* Set button width to fill container width minus padding */
+            margin-top: 10px; /* Add margin-top to separate button from labels */
+        }
+        .container form input[type="submit"]:hover {
+            background-color: #2980b9;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+        }
+        .modal-content {
+            background-color: #fefefe; /* White background */
+            margin: 15% auto; /* Center the modal vertically */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add shadow */
+            position: relative;
+        }
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+        }
+
+        /* "?" Icon Styles */
+        label {
+            position: relative;
+            display: block; /* Ensure labels are displayed as block elements */
+            padding-right: 1ch; /* Add padding to the right of labels */
+        }
+
+        label::after {
+    content: "?";
+    position: relative;
+    font-size: smaller;
+    font-weight: bold;
+    color: black;
+    background-color: #ffffff; /* Background color for the circle */
+    border: 1px solid #181717; /* Border for circular background */
+    border-radius: 50%; /* Makes the background circular */
+    width: 14px; /* Set width and height for circular background */
+    height: 14px; /* Ensure width and height are the same for a perfect circle */
+    text-align: center; /* Center the "?" inside the circle */
+    line-height: 14px; /* Center the "?" inside the circle */
+    display: inline-block; /* Ensure the circle is displayed as a block-level element */
+    vertical-align: middle; /* Vertically align the circle */
+    margin-left: 5px; /* Add some space between the label text and the circle */
+    margin-bottom: 0px; /* Adjust the circle's position down */
+}
+
+
+
+
+
+
+        /* Exclamation mark in circle */
+        .exclamation-circle {
+            position: absolute;
+            top: 50%;
+            right: -20px;
+            transform: translateY(-50%);
+            font-size: smaller;
+            color: #0a0101;
+            background-color: rgb(251, 247, 247); /* Red background */
+            border: 1px solid #000000;
+            border-radius: 50%; /* Circle */
+            width: 20px;
+            height: 20px;
+            text-align: center; /* Center the exclamation mark inside the circle */
+            line-height: 20px; /* Center the exclamation mark inside the circle */
+            display: none; /* Initially hide the exclamation mark */
+        }
+    </style>
+</head>
+<body>
+   
+
+    <div class="container">
+        <form id="taxForm" onsubmit="event.preventDefault(); calculateTax()">
+            <label for="income">Enter Gross Annual Income</label><div id="incomeError" class="exclamation-circle">!</div>
+            <input type="number" id="income" required><br><br>
+            <label for="extraIncome">Enter Extra Income</label><div id="extraIncomeError" class="exclamation-circle">!</div>
+            <input type="number" id="extraIncome" required><br><br>
+            <label for="age">Enter The Age Group</label>
+            <select id="age" required>
+                <option value="<40">&lt; 40</option>
+                <option value=">=40&<60">&ge; 40 &amp; &lt; 60</option>
+                <option value=">=60">&ge; 60</option>
+            </select>
+            <br><br>
+            <label for="deductions">Enter Total applicable deductions</label><div id="deductionsError" class="exclamation-circle">!</div>
+            <input type="number" id="deductions" required><br><br>
+
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span> <!-- Close button -->
+            <div id="taxAmountContainer"></div> <!-- Container for tax amount -->
+        </div>
+    </div>
+
+    <script>
+        function calculateTax() {
+            var income = document.getElementById("income").value.trim();
+            var age = document.getElementById("age").value;
+            var deductions = document.getElementById("deductions").value.trim();
+            var extraIncome = document.getElementById("extraIncome").value.trim();
+
+            // Check if any required field is empty
+            if (income === "" || deductions === "" || extraIncome === "") {
+                alert("Please fill in all required fields!");
+                return; // Exit the function if any required field is empty
+            }
+
+            // Convert the input values to numbers
+            income = parseFloat(income);
+            deductions = parseFloat(deductions);
+            extraIncome = parseFloat(extraIncome);
+
+            // Check if income and deductions are valid numbers
+            if (isNaN(income) || isNaN(deductions) || isNaN(extraIncome)) {
+                alert("Please enter valid numbers for income, extra income, and deductions!");
+                return; // Exit the function if any input is not a valid number
+            }
+
+            // Tax calculation logic
+            var threshold = 8; // Lakhs
+            var taxableIncome = (income + extraIncome - deductions) - threshold;
+            var taxRate = 0;
+            var taxAmount = 0;
+
+            if (taxableIncome > 0) {
+                if (age === "<40") {
+                    taxRate = 0.3;
+                } else if (age === ">=40&<60") {
+                    taxRate = 0.4;
+                } else if (age === ">=60") {
+                    taxRate = 0.1;
+                }
+                taxAmount = taxableIncome * taxRate;
+            }
+
+            // Display tax amount in modal
+            document.getElementById("taxAmountContainer").innerHTML = "Tax amount: " + taxAmount.toFixed(2) + " Lakhs";
+            document.getElementById("modal").style.display = "block";
+        }
+
+        function closeModal() {
+            document.getElementById("modal").style.display = "none";
+        }
+
+        // Function to validate input and show/hide error icon
+        function validateInput(inputId, errorId) {
+            var input = document.getElementById(inputId);
+            var error = document.getElementById(errorId);
+
+            if (input.value.trim() === "") {
+                error.style.display = "block";
+            } else {
+                error.style.display = "none";
+            }
+        }
+
+        // Event listeners to validate input fields
+        document.getElementById("income").addEventListener("input", function() {
+            validateInput("income", "incomeError");
+        });
+
+        document.getElementById("extraIncome").addEventListener("input", function() {
+            validateInput("extraIncome", "extraIncomeError");
+        });
+
+        document.getElementById("deductions").addEventListener("input", function() {
+            validateInput("deductions", "deductionsError");
+        });
+    </script>
+</body>
+</html>
